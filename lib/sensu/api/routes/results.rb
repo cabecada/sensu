@@ -32,6 +32,9 @@ module Sensu
             unless clients.empty?
               clients.each_with_index do |client_name, client_index|
                 @redis.smembers("result:#{client_name}") do |checks|
+                  if checks.empty?
+                    checks = ["does-not-exist"]
+                  end
                   if !checks.empty?
                     checks.each_with_index do |check_name, check_index|
                       result_key = "result:#{client_name}:#{check_name}"
@@ -39,6 +42,8 @@ module Sensu
                         unless result_json.nil?
                           check = Sensu::JSON.load(result_json)
                           @response_content << {:client => client_name, :check => check}
+                        else
+                          @response_content << {:client => client_name, :check => nil}
                         end
                         if client_index == clients.length - 1 && check_index == checks.length - 1
                           respond
